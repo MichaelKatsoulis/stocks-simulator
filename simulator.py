@@ -11,7 +11,7 @@ scrapings = []
 for line in open(r'articles.json', 'r'):
     scrapings.append(json.loads(line))
 
-print(len(scrapings))
+# print(len(scrapings))
 
 # data = pd.DataFrame(scrapings)
 # data.company = data.company.apply(utils.remove_spaces)
@@ -67,13 +67,16 @@ for date in all_dates:
                 config.map_scrader_name_to_market[company],
                 start=to_pl.index.min(), end=date
             )
-            print("Company {}".format(company))
+            # print("Company {}".format(company))
             # print(stock.Close)
             # print(to_pl['cumsum'])
             # corr, _ = pearsonr(stock.Close, to_pl['cumsum'].shift(3))
             # print("Company {} has {} corellation".format(company, corr))
             stock['scrader'] = to_pl['cumsum'].shift(3)
             # print(stock)
-            corr = stock[['Close', 'scrader']].corr(method='pearson')
-            print("Company {} has {} corellation".format(company, corr))
+            corr_df = stock[['Close', 'scrader']].corr(method='pearson')
+            correlation = corr_df.to_dict().get('Close').get('scrader')
+            print("Company {} has {} corellation".format(company, correlation))
+            if correlation < 0.5:
+                continue
             # break
