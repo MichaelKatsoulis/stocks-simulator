@@ -4,7 +4,8 @@ import json
 import config
 import utils
 import datetime
-from scipy.stats import pearsonr
+import time
+# from scipy.stats import pearsonr
 
 all_dates = []
 scrapings = []
@@ -16,8 +17,9 @@ for line in open(r'articles.json', 'r'):
 # data = pd.DataFrame(scrapings)
 # data.company = data.company.apply(utils.remove_spaces)
 for article in scrapings:
-    article['timestamp'] = datetime.datetime.timestamp(datetime.datetime.strptime(
-        article.get('subtitle'), '%m/%d/%Y'))
+    date = datetime.datetime.strptime(article.get('subtitle'), '%m/%d/%Y')
+    # article['timestamp'] = datetime.datetime.timestamp(date)
+    article['timestamp'] = time.mktime(date.timetuple())
     article['date'] = datetime.datetime.strptime(
         article.get('subtitle'), '%m/%d/%Y').strftime('%Y-%m-%d')
     article['subtitle'] = pd.Timestamp(article['subtitle'])
