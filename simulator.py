@@ -37,7 +37,8 @@ for article in date_sorted_scrapings:
 # print(len(all_dates))
 # all_dates = ['2019-02-28']
 for date in all_dates[50::10]:
-    to_buy_comps = []
+    to_go_up_comps = []
+    to_go_down_comps = []
     companies = utils.companies_between_limits(date, date_sorted_scrapings)
     companies = utils.companies_with_articles_x_days_before_date(
         date, date_sorted_scrapings, companies)
@@ -91,10 +92,8 @@ for date in all_dates[50::10]:
 
             pl_list = to_pl['cumsum'].to_list(
             )[-config.number_of_daypoints:]
-            print("The length is {}".format(len(pl_list)))
-            pos = 0
-            neg = 0
-            stable = 0
+            # print("The length is {}".format(len(pl_list)))
+            pos = neg = stable = 0
             for index, cumsum in enumerate(pl_list):
                 if index == len(pl_list) - 1:
                     break
@@ -106,16 +105,80 @@ for date in all_dates[50::10]:
                 else:
                     neg += 1
             pos = pos + stable
-            if pos / len(pl_list) > config.per_of_points_to_be_pos:
+            neg = neg + stable
+            if pos / len(pl_list) > config.per_of_points_to_be_pos_or_neg:
                 if pl_list[-1] > pl_list[0]:
-                    act_raise = pl_list[-1] / pl_list[0] - 1
-                    # print(act_raise)
-                    if act_raise > config.per_of_raise:
-                        to_buy_comps.append(company)
+                    per_change = (
+                        pl_list[-1] - pl_list[0]) / abs(pl_list[0])
+                    if abs(per_change) >= config.per_of_raise:
+                        to_go_up_comps.append(company)
                         # print("We should buy from {}".format(company))
                         # print(to_pl['cumsum'][-config.number_of_daypoints:])
-                        # print(act_raise)
+            else:
+                if neg / len(pl_list) > config.per_of_points_to_be_pos_or_neg:
+                    if pl_list[0] > pl_list[-1]:
+                        per_change = (
+                            pl_list[-1] - pl_list[0]) / abs(pl_list[0])
+                        # print(act_decline)
+                        if per_change <= -config.per_of_decline:
+                            to_go_down_comps.append(company)
+                            # print("We should buy from {}".format(company))
+                            # print(to_pl['cumsum'][-config.number_of_daypoints:])
+    date_1 = datetime.datetime.strptime(date, '%Y-%m-%d')
+    start_date = (date_1 + datetime.
+                  timedelta(days=1))\
+        .strftime('%Y-%m-%d')
+    end_date = (date_1 + datetime.
+                timedelta(days=config.days_to_check_price))\
+        .strftime('%Y-%m-%d')
+
+    actual_up = []
+    for comp in to_go_up_comps:
+        comp_stock = yf.download(
+            config.map_scrader_name_to_market[comp],
+            start=start_date, end=end_date
+        )
+        # print(comp)
+        # print(comp_stock)
+        starting_price = comp_stock['Close'][0]
+
+        for price in comp_stock['Close'].to_list()[1:]:
+            perc = (float(price) - float(starting_price)) / \
+                (float(starting_price))
+            # print(perc)
+            if perc >= config.per_of_raise:
+                actual_up.append(comp)
+                break
+    actual_down = []
+    for comp in to_go_down_comps:
+        comp_stock = yf.download(
+            config.map_scrader_name_to_market[comp],
+            start=start_date, end=end_date
+        )
+        # print(comp)
+        # print(comp_stock)
+        starting_price = comp_stock['Close'][0]
+
+        for price in comp_stock['Close'].to_list()[1:]:
+            perc = (float(price) - float(starting_price)) / \
+                (float(starting_price))
+            # print(perc)
+            if perc <= -config.per_of_decline:
+                actual_down.append(comp)
+                break
+
     print("In date {} we have {} companies with enough articles".format(
         date, len(companies)))
-    print("After applying the rules you can only buy from {}".format(to_buy_comps))
+    if len(to_go_up_comps) > 0:
+        print("After applying the rules we believe that {} will go up".
+              format(to_go_up_comps))
+        print("Actually went up {}".format(actual_up))
+        print("Percentage of successfull prediction of raise is: {}%".
+              format((len(actual_up) / len(to_go_up_comps)) * 100))
+    if len(to_go_down_comps):
+        print("{} will go down".format(to_go_down_comps))
+        print("Actually went down {}".format(actual_down))
+        print("Percentage of successfull prediction of reduction is: {}%".
+              format((len(actual_down) / len(to_go_down_comps)) * 100))
+
     # break
