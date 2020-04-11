@@ -18,8 +18,8 @@ for line in open(r'articles.json', 'r'):
 # data.company = data.company.apply(utils.remove_spaces)
 for article in scrapings:
     date = datetime.datetime.strptime(article.get('subtitle'), '%m/%d/%Y')
-    # article['timestamp'] = datetime.datetime.timestamp(date)
     article['timestamp'] = time.mktime(date.timetuple())
+    # article['timestamp'] = datetime.datetime.timestamp(date)
     article['date'] = datetime.datetime.strptime(
         article.get('subtitle'), '%m/%d/%Y').strftime('%Y-%m-%d')
     article['subtitle'] = pd.Timestamp(article['subtitle'])
@@ -91,13 +91,21 @@ for date in all_dates[50::10]:
 
             pl_list = to_pl['cumsum'].to_list(
             )[-config.number_of_daypoints:]
-
+            print("The length is {}".format(len(pl_list)))
             pos = 0
+            neg = 0
+            stable = 0
             for index, cumsum in enumerate(pl_list):
                 if index == len(pl_list) - 1:
                     break
-                if pl_list[index + 1] - pl_list[index] > 0:
+                diff = pl_list[index + 1] - pl_list[index]
+                if diff == 0:
+                    stable += 1
+                elif diff > 0:
                     pos += 1
+                else:
+                    neg += 1
+            pos = pos + stable
             if pos / len(pl_list) > config.per_of_points_to_be_pos:
                 if pl_list[-1] > pl_list[0]:
                     act_raise = pl_list[-1] / pl_list[0] - 1

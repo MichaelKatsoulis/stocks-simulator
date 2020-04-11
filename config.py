@@ -8,6 +8,6 @@ articles_high_limit = 400
 days_to_have_articles = 50
 accepted_pearson_corr = 0.5
 number_of_daypoints = 15
-per_of_points_to_be_pos = 0.4
+per_of_points_to_be_pos = 0.7
 per_of_raise = 0.05
 nan_accepted = 0.6
